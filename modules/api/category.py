@@ -6,7 +6,7 @@ class CategoryInterface(BaseInterface):
 
     def __init__(self, token):
         super().__init__(token)
-        self.url = self.url + "/category/"
+        self.url = self.url + "/group/category/"
 
     async def get_all(self, user_id, group_id):
         params = {
@@ -22,7 +22,7 @@ class CategoryInterface(BaseInterface):
             "group_sk" : group_id,
             "category_name" : category_name
         }
-
+        print(data)
         req = post(self.url, json=data)
         return self.return_json(req, 200)
 

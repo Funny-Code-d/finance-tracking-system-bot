@@ -4,6 +4,10 @@ from requests import delete as req_delete
 
 class TemplatesInterface(BaseInterface):
 
+    def __init__(self, token):
+        super().__init__(token)
+        self.url = self.url + "/group/templates/"
+
     async def get_all(self, user_id, group_id):
         params = {
             "customer_sk" : user_id,

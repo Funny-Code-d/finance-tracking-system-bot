@@ -6,10 +6,12 @@ from modules.keyboard import Keyboard
 from modules.fs_machine import RegistState
 from modules.models import Regist
 from loader import dp, interface, orm
+from app import update_pull_users
+from modules.keyboard import InlineKeyboardData
 
 
 
-@dp.message_handler(commands=['menu', 'start'])
+@dp.message_handler(commands=['start'])
 async def start_bot(message: Message):
 
     telegram_id = message.from_user.id
@@ -18,8 +20,8 @@ async def start_bot(message: Message):
 
     if is_regist:
         keyboard = [
-            "Друзья",
-            "Группы"
+            "/friends",
+            "/groups"
         ]
         kb = Keyboard.create_standart_keyboard(keyboard)
 
@@ -54,7 +56,7 @@ async def get_email(message: Message, state: FSMContext):
         )
         await state.update_data({"email" : message.text})
     except ValidationError:
-        await message.answer("Введите корректную почту")
+        await message.answer("Введите корректную почту", reply_markup=ReplyKeyboardRemove())
         return
     else:
         await message.answer("Ввведите пароль")
@@ -69,8 +71,8 @@ async def get_passwd(message: Message, state: FSMContext):
     email = data.get("email")
 
     keyboard_login = [
-        "Друзья",
-        "Группы"
+        "/friends",
+        "/groups"
     ]
     keyboard_failed = [
         "Регистрация",
@@ -89,16 +91,18 @@ async def get_passwd(message: Message, state: FSMContext):
         )
 
         if responce_api:
-            await message.answer("Регистрация прошла успешно!", reply_markup=kb_login)
+            await message.answer("Регистрация прошла успешно!\nЧтоб избежать сллучайной компрометации вашего пароля, можете удалить сообщение из переписки.", reply_markup=kb_login)
             await orm.create_user(
                  message.from_user.first_name,
                  message.from_user.last_name,
                  email,
                  message.from_user.id
             )
+            customer_sk = await interface.User.get_by_telegram(message.from_user.id)
+            await orm.update_customer_sk(message.from_user.id, customer_sk)
         else:
             
-            await message.answer("Регистрация не удалась", reply_markup=kb)
+            await message.answer("Регистрация не удалась. Введите /start", reply_markup=ReplyKeyboardRemove())
     
     elif action == "Войти":
 
@@ -112,12 +116,17 @@ async def get_passwd(message: Message, state: FSMContext):
                  email,
                  message.from_user.id
             )
+            customer_sk = await interface.User.get_by_telegram(message.from_user.id)
+            print(customer_sk)
+            await orm.update_customer_sk(message.from_user.id, customer_sk["customer_sk"])
+
         else:
-            await message.answer("Авторизация не удалась, логин или пароль введён не верно", reply_markup=kb)
+            await message.answer("Авторизация не удалась, логин или пароль введён не верно. Введите /start", reply_markup=ReplyKeyboardRemove())
             
     
     else:
-        await message.answer("Неизвестная ошибка, попробуйте ещё раз", reply_markup=kb)
+        await message.answer("Неизвестная ошибка, попробуйте ещё раз. Введите /start", reply_markup=ReplyKeyboardRemove())
     
     
     await state.finish()
+    await update_pull_users()

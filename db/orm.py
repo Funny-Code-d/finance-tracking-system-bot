@@ -16,6 +16,7 @@ class ORMDatabase:
 
         if responce_db:
             return {
+                "customer_sk" : responce_db['customer_sk'],
                 "first_name" : responce_db['first_name'],
                 "last_name" : responce_db['last_name'],
                 "telegram_id" : responce_db['telegram_id'],
@@ -35,3 +36,25 @@ class ORMDatabase:
         query = customers.insert().values(**values)
         await self.database.execute(query=query)
         return True
+    
+    async def update_customer_sk(self, telegram_id, customer_sk):
+
+        values = {
+            "customer_sk" : customer_sk
+        }
+
+        query = customers.update().values(**values).where(customers.c.telegram_id==telegram_id)
+        await self.database.execute(query=query)
+        return True
+    
+    async def get_pull_users(self):
+        query = customers.select()
+
+        responce_db = await self.database.fetch_all(query=query)
+
+        result = list()
+        for row in responce_db:
+            result.append(row['telegram_id'])
+
+        return result
+
